@@ -1,11 +1,24 @@
 {
-  "name": "rtsp-lite",
+  "name": "@eyecu/rtsp-lite",
   "version": "1.0.0",
-  "description": "",
   "scripts": {},
-  "author": "",
-  "license": "ISC",
+  "author": "Oguz Vuruskaner",
+  "license": "MIT",
   "dependencies": {
     "portastic": "^1.0.1"
-  }
+  },
+  "main": "RTSPClient.js",
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eyecuvision/rtsp-lite.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eyecuvision/rtsp-lite/issues"
+  },
+  "homepage": "https://github.com/eyecuvision/rtsp-lite#readme",
+  "description": "Lite RTSP protocol client.",
+  "keywords": [
+    "rtsp"
+  ]
 }
