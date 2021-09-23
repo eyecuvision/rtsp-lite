@@ -1,0 +1,11 @@
+{
+  "name": "rtsp-lite",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {},
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "portastic": "^1.0.1"
+  }
+}
