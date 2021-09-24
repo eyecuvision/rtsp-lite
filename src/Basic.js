@@ -1,0 +1,1 @@
+module.exports = (username,password) => Buffer.from(`${username}:${password}`).toString('base64')
