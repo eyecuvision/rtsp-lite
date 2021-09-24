@@ -2,7 +2,6 @@ const net = require("net")
 const portastic = require('portastic');
 const Digest = require("./Digest")
 const Basic = require("./Basic");
-const { resolveObjectURL } = require("buffer");
 
 
 
@@ -191,34 +190,31 @@ class RTSPClient{
         this.route = route
         this.uri = `rtsp://${this.ipAddress}:${this.port}${this.route}`
         return new Promise((resolve,reject) => {
-            const timeoutId = setTimeout(reject,5000)
+            this.timeoutId = setTimeout(reject,5000)
             this.client.connect(this.port,this.ipAddress,() => {
-                clearTimeout(timeoutId)
+                clearTimeout(this.timeoutId)
                 resolve()
             })
             this.client.on("error",err => {
-                clearTimeout(timeoutId)
+                clearTimeout(this.timeoutId)
                 reject(err)
             })
+    
         })
         
     }
 
     send = (message) => new Promise((resolve,reject) => {
-        const timeoutId = setTimeout(() => {
+        this.timeoutId = setTimeout(() => {
             this.client.removeAllListeners()
             reject()
         },this.clientTimeout)
         this.client.write(Buffer.from(message))
         this.client.on("data",(data) => {
-            clearTimeout(timeoutId)
-            this.client.removeAllListeners()
+            clearTimeout(this.timeoutId)
             resolve(data.toString())
         })
-        this.client.on("error",err => {
-            clearTimeout(timeoutId)
-            reject(err)
-        })
+        
 
         
     })
@@ -248,7 +244,7 @@ class RTSPClient{
         
         const firstMessage = `DESCRIBE ${this.uri} RTSP/1.0\r\nCSeq: ${this.CSeq++}\r\nUser-Agent: EyeCU Ward v1.0.0\r\nAccept: application/sdp\r\n\r\n`
 
-        const firstResponse = await this.send(firstMessage)
+        const firstResponse = await this.send(firstMessage).catch(reject)
         
 
 
@@ -267,7 +263,7 @@ class RTSPClient{
         let secondMessage = `DESCRIBE ${this.uri} RTSP/1.0\r\nCSeq: ${this.CSeq++}\r\nUser-Agent: EyeCU Ward v1.0.0\r\nAccept: application/sdp\r\n`
         secondMessage += `Authorization: ${authHeader}\r\n`
         secondMessage += "\r\n"
-        const secondResponse = await this.send(secondMessage)
+        const secondResponse = await this.send(secondMessage).catch(reject)
         const parsedSecondResponse = RTSPClient.parseResponse(secondResponse)
 
         if(parsedSecondResponse.statusCode === 200){
@@ -310,7 +306,7 @@ class RTSPClient{
             message += `Transport: RTP/AVP;unicast;client_port=${clientPort}-${clientPort+1}\r\n`
             message += "\r\n"
     
-            const response = await this.send(message)
+            const response = await this.send(message).catch(reject)
             const parsedResponse = RTSPClient.parseResponse(response)
             resolve(parsedResponse)
         }catch(err){
@@ -330,8 +326,8 @@ class RTSPClient{
     
             }
             message += "\r\n"
-    
-            const response = await this.send(message)
+            const response = await this.send(message).catch(reject)
+
             const parsedResponse = RTSPClient.parseResponse(response)
             resolve(parsedResponse)
         }catch(err){
@@ -344,7 +340,7 @@ class RTSPClient{
     options = () => new Promise( async (resolve,reject) => {
         try{
             let message = `OPTIONS ${this.uri} RTSP/1.0\r\nCSeq: ${this.CSeq++}\r\nUser-Agent: EyeCU Ward v1.0.0\r\nAccept: application/sdp\r\n`
-            const response = await this.send(message).catch()
+            const response = await this.send(message).catch(reject)
             const parsedResponse = RTSPClient.parseResponse(response)
             resolve(parsedResponse)
         }catch(err){
