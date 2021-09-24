@@ -1,7 +1,8 @@
 const net = require("net")
 const portastic = require('portastic');
 const Digest = require("./Digest")
-const Basic = require("./Basic")
+const Basic = require("./Basic");
+const { resolveObjectURL } = require("buffer");
 
 
 
@@ -198,6 +199,10 @@ class RTSPClient{
                 clearTimeout(timeoutId)
                 resolve()
             })
+            this.client.on("error",err => {
+                clearTimeout(timeoutId)
+                reject(err)
+            })
         })
         
     }
@@ -213,6 +218,11 @@ class RTSPClient{
             this.client.removeAllListeners()
             resolve(data.toString())
         })
+        this.client.on("error",err => {
+            clearTimeout(timeoutId)
+            reject(err)
+        })
+
         
     })
     
