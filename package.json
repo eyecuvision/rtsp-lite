@@ -1,14 +1,17 @@
 {
   "name": "@eyecu/rtsp-lite",
-  "version": "1.0.0",
-  "scripts": {},
+  "version": "1.0.1",
+  "scripts": {
+    "test":"jest"
+  },
   "author": "Oguz Vuruskaner",
   "license": "MIT",
   "dependencies": {
     "portastic": "^1.0.1"
   },
-  "main": "RTSPClient.js",
-  "devDependencies": {},
+  "devDependencies": {
+    "jest": "^27.2.1"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/eyecuvision/rtsp-lite.git"
