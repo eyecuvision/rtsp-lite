@@ -8,16 +8,28 @@ const nonRtspDeviceAddress = ["192.168.0.10",554]
 describe("RTSP Client can " , () => {
     
     
-    it("fetch options.", done => {
+    it("fetch OPTIONS.", done => {
+
         const client = new RTSPClient(...rtspDeviceAddress)
         
         client.connect("/")
         .then(() => {
+            () => done("asdfasdf")
             client.options()
-            .then(() => {
-                client.destroy()
-                done()
-            })
+            .then(() => done())
+            .catch()
+            .finally(client.destroy)
+        })
+    })
+
+    it("fetch DESCRIBE.", done => {
+        const client = new RTSPClient(...rtspDeviceAddress)
+        client.connect("/")
+        .then(() => {
+            client.describe()
+            .then(() => done())
+            .catch((err) => done(err,"FAILED"))
+            .finally(client.destroy)
         })
     })
 
@@ -26,8 +38,8 @@ describe("RTSP Client can " , () => {
 
         try{
             client.connect("/")
-            .then(() => done.fail("ECONNREFUSED should have been rejected."))
-            .catch(done)
+            .then(() => done("ECONNREFUSED should have been rejected."))
+            .catch(() => done())
 
         }catch{
             throw new Error("ECONNREFUSED cannot be catched.")
@@ -42,7 +54,7 @@ describe("RTSP Client can " , () => {
 
         try{
             client.connect("/")
-            .then(() => done.fail("Unavailable connection should have been rejected."))
+            .then((...args) => done(args,"Unavailabe connection should have been rejected."))
             .catch(done)
 
         }catch{
@@ -53,5 +65,4 @@ describe("RTSP Client can " , () => {
         
     },10000)
 
-   
 })
