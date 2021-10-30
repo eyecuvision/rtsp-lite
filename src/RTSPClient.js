@@ -96,7 +96,7 @@ class RTSPClient{
     }
 
     static parseResponse (response){
-
+      
         const lines = response.split("\r\n")
         
         const statusCode = parseInt(lines[0].split(" ")[1])
@@ -192,7 +192,8 @@ class RTSPClient{
         this.route = route
         this.uri = `rtsp://${this.ipAddress}:${this.port}${this.route}`
         return new Promise((resolve,reject) => {
-            this.timeoutId = setTimeout(reject,5000)
+            this.timeoutId = setTimeout(() => {reject("Connection timeout is reached.")},this.clientTimeout)
+
             this.client.connect(this.port,this.ipAddress,() => {
                 clearTimeout(this.timeoutId)
                 resolve()
@@ -245,10 +246,13 @@ class RTSPClient{
         return new Promise( async (resolve,reject) => {
             
             const firstMessage = `DESCRIBE ${this.uri} RTSP/1.0\r\nCSeq: ${this.CSeq++}\r\nUser-Agent: EyeCU Ward v1.0.0\r\nAccept: application/sdp\r\n\r\n`
-
-            const firstResponse = await this.send(firstMessage).catch(reject)
             
+            const firstResponse = await this.send(firstMessage).catch(reject)
 
+            if(firstResponse === undefined){
+                reject("Response is undefined.")
+                return
+            }
 
             const parsedFirstResponse = RTSPClient.parseResponse(firstResponse)
             if(parsedFirstResponse.statusCode === 200){
@@ -266,14 +270,23 @@ class RTSPClient{
             secondMessage += `Authorization: ${authHeader}\r\n`
             secondMessage += "\r\n"
             const secondResponse = await this.send(secondMessage).catch(reject)
+
+            if(secondResponse === undefined){
+                reject("Response is undefined.")
+                return
+            }
+
             const parsedSecondResponse = RTSPClient.parseResponse(secondResponse)
+            
 
             if(parsedSecondResponse.statusCode === 200){
                 this.loggedIn = true
                 resolve(parsedSecondResponse)
             }else{
+                this.loggedIn = false
                 reject(parsedSecondResponse)
             }
+
         })
     }
 
