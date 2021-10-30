@@ -348,7 +348,7 @@ class RTSPClient{
     options(){
         return new Promise( async (resolve,reject) => {
             try{
-                let message = `OPTIONS ${this.uri} RTSP/1.0\r\nCSeq: ${this.CSeq++}\r\nUser-Agent: EyeCU Ward v1.0.0\r\nAccept: application/sdp\r\n`
+                let message = `OPTIONS ${this.uri} RTSP/1.0\r\nCSeq: ${this.CSeq++}\r\nUser-Agent: EyeCU Ward v1.0.0\r\nAccept: application/sdp\r\n\r\n`
                 const response = await this.send(message).catch(reject)
                 const parsedResponse = RTSPClient.parseResponse(response)
                 resolve(parsedResponse)
