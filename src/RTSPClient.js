@@ -154,7 +154,7 @@ class RTSPClient{
         })
     }
 
-    static getDigestHeader(authProperties) {
+    static getDigestHeader(authProperties)  {
 
         let header = "Digest"
         const {uri,username="",password="",nonce,algorithm="md5",realm,cnonce = "",qop="",nc = "",method="DESCRIBE"} = authProperties
@@ -186,7 +186,7 @@ class RTSPClient{
         
     }
 
-    connect = (route) => {
+    connect(route){
         this.route = route
         this.uri = `rtsp://${this.ipAddress}:${this.port}${this.route}`
         return new Promise((resolve,reject) => {
@@ -204,23 +204,22 @@ class RTSPClient{
         
     }
 
-    send = (message) => new Promise((resolve,reject) => {
-        this.timeoutId = setTimeout(() => {
-            this.client.removeAllListeners()
-            reject()
-        },this.clientTimeout)
-        this.client.write(Buffer.from(message))
-        this.client.on("data",(data) => {
-            clearTimeout(this.timeoutId)
-            resolve(data.toString())
+    send(message){ 
+        return new Promise((resolve,reject) => {
+            this.timeoutId = setTimeout(() => {
+                this.client.removeAllListeners()
+                reject("Timeout is reached.")
+            },this.clientTimeout)
+            this.client.write(Buffer.from(message))
+            this.client.on("data",(data) => {
+                clearTimeout(this.timeoutId)
+                resolve(data.toString())
+            })
+        
         })
-        
+    }
 
-        
-    })
-    
-
-    prepareAuth = (authInformation,username,password,method) => {
+    prepareAuth(authInformation,username,password,method) {
         const {type} = authInformation
         this.authProperties = {
             authInformation,
@@ -240,41 +239,43 @@ class RTSPClient{
         }
     }
     
-    login =   (username,password) => new Promise( async (resolve,reject) => {
-        
-        const firstMessage = `DESCRIBE ${this.uri} RTSP/1.0\r\nCSeq: ${this.CSeq++}\r\nUser-Agent: EyeCU Ward v1.0.0\r\nAccept: application/sdp\r\n\r\n`
+    login (username,password) {
+        return new Promise( async (resolve,reject) => {
+            
+            const firstMessage = `DESCRIBE ${this.uri} RTSP/1.0\r\nCSeq: ${this.CSeq++}\r\nUser-Agent: EyeCU Ward v1.0.0\r\nAccept: application/sdp\r\n\r\n`
 
-        const firstResponse = await this.send(firstMessage).catch(reject)
-        
+            const firstResponse = await this.send(firstMessage).catch(reject)
+            
 
 
-        const parsedFirstResponse = RTSPClient.parseResponse(firstResponse)
-        if(parsedFirstResponse.statusCode === 200){
-            this.authProperties = {
-                username :"",
-                password:""
+            const parsedFirstResponse = RTSPClient.parseResponse(firstResponse)
+            if(parsedFirstResponse.statusCode === 200){
+                this.authProperties = {
+                    username :"",
+                    password:""
+                }
+                this.loggedIn = true
+                resolve(parsedFirstResponse)
+            } 
+
+            const authHeader = this.prepareAuth(parsedFirstResponse.wwwAuthenticate[0],username,password)
+
+            let secondMessage = `DESCRIBE ${this.uri} RTSP/1.0\r\nCSeq: ${this.CSeq++}\r\nUser-Agent: EyeCU Ward v1.0.0\r\nAccept: application/sdp\r\n`
+            secondMessage += `Authorization: ${authHeader}\r\n`
+            secondMessage += "\r\n"
+            const secondResponse = await this.send(secondMessage).catch(reject)
+            const parsedSecondResponse = RTSPClient.parseResponse(secondResponse)
+
+            if(parsedSecondResponse.statusCode === 200){
+                this.loggedIn = true
+                resolve(parsedSecondResponse)
+            }else{
+                reject(parsedSecondResponse)
             }
-            this.loggedIn = true
-            resolve(parsedFirstResponse)
-        } 
+        })
+    }
 
-        const authHeader = this.prepareAuth(parsedFirstResponse.wwwAuthenticate[0],username,password)
-
-        let secondMessage = `DESCRIBE ${this.uri} RTSP/1.0\r\nCSeq: ${this.CSeq++}\r\nUser-Agent: EyeCU Ward v1.0.0\r\nAccept: application/sdp\r\n`
-        secondMessage += `Authorization: ${authHeader}\r\n`
-        secondMessage += "\r\n"
-        const secondResponse = await this.send(secondMessage).catch(reject)
-        const parsedSecondResponse = RTSPClient.parseResponse(secondResponse)
-
-        if(parsedSecondResponse.statusCode === 200){
-            this.loggedIn = true
-            resolve(parsedSecondResponse)
-        }else{
-            reject(parsedSecondResponse)
-        }
-    })
-
-    static getAvailablePort(){
+    static getAvailablePort  ()  {
         return new Promise((resolve,reject) => {
             portastic.find({
                 min:50000,
@@ -286,70 +287,77 @@ class RTSPClient{
         })
     }
 
-    setup = (streamInformation) => new Promise(async(resolve,reject) => {
-        try{
-            let uri  
-            if(streamInformation.uri === null){
-                uri = `${this.uri}/${streamInformation.route}`
-            }else{
-                uri = streamInformation.uri
-            }
-            const clientPort = (await RTSPClient.getAvailablePort())[0]
-            let message = `SETUP ${uri} RTSP/1.0\r\nCSeq: ${this.CSeq++}\r\nUser-Agent: EyeCU Ward v1.0.0\r\n`
+    setup(streamInformation) {
+        return new Promise(async(resolve,reject) => {
+            try{
+                let uri  
+                if(streamInformation.uri === null){
+                    uri = `${this.uri}/${streamInformation.route}`
+                }else{
+                    uri = streamInformation.uri
+                }
+                const clientPort = (await RTSPClient.getAvailablePort())[0]
+                let message = `SETUP ${uri} RTSP/1.0\r\nCSeq: ${this.CSeq++}\r\nUser-Agent: EyeCU Ward v1.0.0\r\n`
 
-            if(this.loggedIn){
-                const {authInformation,username,password} = this.authProperties
-                const authHeader = this.prepareAuth(authInformation,username,password,"SETUP")
-                message += `Authorization: ${authHeader}\r\n`
-    
-            }
-            message += `Transport: RTP/AVP;unicast;client_port=${clientPort}-${clientPort+1}\r\n`
-            message += "\r\n"
-    
-            const response = await this.send(message).catch(reject)
-            const parsedResponse = RTSPClient.parseResponse(response)
-            resolve(parsedResponse)
-        }catch(err){
-            reject(err)
-        }
+                if(this.loggedIn){
+                    const {authInformation,username,password} = this.authProperties
+                    const authHeader = this.prepareAuth(authInformation,username,password,"SETUP")
+                    message += `Authorization: ${authHeader}\r\n`
         
-    })
-
-    describe =  () => new Promise(async (resolve,reject) => {
-
-        try{
-            let message = `DESCRIBE ${this.uri} RTSP/1.0\r\nCSeq: ${this.CSeq++}\r\nUser-Agent: EyeCU Ward v1.0.0\r\n`
-            if(this.loggedIn){
-                const {authInformation,username,password} = this.authProperties
-                const authHeader = this.prepareAuth(authInformation,username,password,"DESCRIBE")
-                message += `Authorization: ${authHeader}\r\n`
-    
+                }
+                message += `Transport: RTP/AVP;unicast;client_port=${clientPort}-${clientPort+1}\r\n`
+                message += "\r\n"
+        
+                const response = await this.send(message).catch(reject)
+                const parsedResponse = RTSPClient.parseResponse(response)
+                resolve(parsedResponse)
+            }catch(err){
+                reject(err)
             }
-            message += "\r\n"
-            const response = await this.send(message).catch(reject)
+            
+        })
+    }
 
-            const parsedResponse = RTSPClient.parseResponse(response)
-            resolve(parsedResponse)
-        }catch(err){
-            reject(err)
-        }
+    describe() {
+        return new Promise(async (resolve,reject) => {
+
+            try{
+                let message = `DESCRIBE ${this.uri} RTSP/1.0\r\nCSeq: ${this.CSeq++}\r\nUser-Agent: EyeCU Ward v1.0.0\r\n`
+                if(this.loggedIn){
+                    const {authInformation,username,password} = this.authProperties
+                    const authHeader = this.prepareAuth(authInformation,username,password,"DESCRIBE")
+                    message += `Authorization: ${authHeader}\r\n`
         
+                }
+                message += "\r\n"
+                const response = await this.send(message).catch(reject)
 
-    })
+                const parsedResponse = RTSPClient.parseResponse(response)
+                resolve(parsedResponse)
+            }catch(err){
+                reject(err)
+            }
+            
 
-    options = () => new Promise( async (resolve,reject) => {
-        try{
-            let message = `OPTIONS ${this.uri} RTSP/1.0\r\nCSeq: ${this.CSeq++}\r\nUser-Agent: EyeCU Ward v1.0.0\r\nAccept: application/sdp\r\n`
-            const response = await this.send(message).catch(reject)
-            const parsedResponse = RTSPClient.parseResponse(response)
-            resolve(parsedResponse)
-        }catch(err){
-            reject(err)
-        }
-        
-    })
+        })
+    }
+    
 
-    destroy = () => {
+    options(){
+        return new Promise( async (resolve,reject) => {
+            try{
+                let message = `OPTIONS ${this.uri} RTSP/1.0\r\nCSeq: ${this.CSeq++}\r\nUser-Agent: EyeCU Ward v1.0.0\r\nAccept: application/sdp\r\n`
+                const response = await this.send(message).catch(reject)
+                const parsedResponse = RTSPClient.parseResponse(response)
+                resolve(parsedResponse)
+            }catch(err){
+                reject(err)
+            }
+            
+        })
+    }
+
+    destroy(){
         this.client.destroy()
     }
 }
