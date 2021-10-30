@@ -31,6 +31,7 @@ class RTSPClient{
 
         for(let line of lines){
             const words = line.split(":")
+
             if(words[0] == "Public"){
                 let options = words[1].replace(" ","").split(",")
                 retObj["options"] = options
@@ -45,7 +46,9 @@ class RTSPClient{
                 authObj["type"] = authType
                 for(let word of authFields){
                     let [key,value] = word.split("=")
-                    value = value.slice(0,-1).replaceAll(`"`,"")
+
+
+                    value = value.slice(1,-1)
                     authObj[key] = value
                 }
                 retObj["wwwAuthenticate"] = retObj["wwwAuthenticate"] || []
@@ -117,9 +120,8 @@ class RTSPClient{
             }
         })
     
-    
-        headers = RTSPClient.parseHeaders(headersList.slice(1).join("\r\n"))
         
+        headers = RTSPClient.parseHeaders(headersList.slice(1).join("\r\n"))
         let retObj = {
             statusCode,
             rtspVersion,
