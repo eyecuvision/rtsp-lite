@@ -236,7 +236,7 @@ class RTSPClient{
                 return RTSPClient.getDigestHeader({...authInformation,username,password,method})
             case "basic":
                 
-                return getBasicHeader({...authInformation,username,password,method})
+                return RTSPClient.getBasicHeader({...authInformation,username,password,method})
             default:
                 return null
         }
