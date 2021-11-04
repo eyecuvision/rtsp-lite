@@ -264,7 +264,7 @@ class RTSPClient{
                 resolve(parsedFirstResponse)
             } 
 
-            const authHeader = this.prepareAuth(parsedFirstResponse.wwwAuthenticate[0],username,password)
+            const authHeader = this.prepareAuth(parsedFirstResponse.wwwAuthenticate[0],username,password,"DESCRIBE")
 
             let secondMessage = `DESCRIBE ${this.uri} RTSP/1.0\r\nCSeq: ${this.CSeq++}\r\nUser-Agent: EyeCU Ward v1.0.0\r\nAccept: application/sdp\r\n`
             secondMessage += `Authorization: ${authHeader}\r\n`
