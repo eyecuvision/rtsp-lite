@@ -1,6 +1,6 @@
 {
-  "name": "@eyecu/rtsp-lite",
-  "version": "1.0.9",
+  "name": "@eyecuvision/rtsp-lite",
+  "version": "1.0.11",
   "scripts": {
     "test":"jest"
   },
