@@ -232,12 +232,10 @@ class RTSPClient{
 
         switch(type.toLowerCase()){
             case "digest":
-               
                 return RTSPClient.getDigestHeader({...authInformation,username,password,method})
-            case "basic":
-                
+		    case "basic":
                 return RTSPClient.getBasicHeader({...authInformation,username,password,method})
-            default:
+			default:
                 return null
         }
     }
@@ -246,9 +244,7 @@ class RTSPClient{
         return new Promise( async (resolve,reject) => {
             
             const firstMessage = `DESCRIBE ${this.uri} RTSP/1.0\r\nCSeq: ${this.CSeq++}\r\nUser-Agent: EyeCU Ward v1.0.0\r\nAccept: application/sdp\r\n\r\n`
-            
-            const firstResponse = await this.send(firstMessage).catch(reject)
-
+   	        const firstResponse = await this.send(firstMessage).catch(reject)
             if(firstResponse === undefined){
                 reject("Response is undefined.")
                 return
@@ -263,21 +259,21 @@ class RTSPClient{
                 this.loggedIn = true
                 resolve(parsedFirstResponse)
             } 
+            if(parsedFirstResponse.statusCode === 404){
+                return
 
-            const authHeader = this.prepareAuth(parsedFirstResponse.wwwAuthenticate[0],username,password)
-
+            }
+		    const authHeader = this.prepareAuth(parsedFirstResponse.wwwAuthenticate[0],username,password)
             let secondMessage = `DESCRIBE ${this.uri} RTSP/1.0\r\nCSeq: ${this.CSeq++}\r\nUser-Agent: EyeCU Ward v1.0.0\r\nAccept: application/sdp\r\n`
             secondMessage += `Authorization: ${authHeader}\r\n`
             secondMessage += "\r\n"
             const secondResponse = await this.send(secondMessage).catch(reject)
-
             if(secondResponse === undefined){
                 reject("Response is undefined.")
                 return
             }
 
             const parsedSecondResponse = RTSPClient.parseResponse(secondResponse)
-            
 
             if(parsedSecondResponse.statusCode === 200){
                 this.loggedIn = true
@@ -322,10 +318,10 @@ class RTSPClient{
                 }
                 message += `Transport: RTP/AVP;unicast;client_port=${clientPort}-${clientPort+1}\r\n`
                 message += "\r\n"
-        
                 const response = await this.send(message).catch(reject)
                 const parsedResponse = RTSPClient.parseResponse(response)
-                resolve(parsedResponse)
+		        resolve(parsedResponse)
+		    
             }catch(err){
                 reject(err)
             }
