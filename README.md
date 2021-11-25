@@ -5,5 +5,5 @@
 ## Install
 
 ```
-npm install @eyecu/rtsp-lite
+npm install @eyecuvision/rtsp-lite
 ```
