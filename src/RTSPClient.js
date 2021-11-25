@@ -218,6 +218,10 @@ class RTSPClient{
                 clearTimeout(this.timeoutId)
                 resolve(data.toString())
             })
+            this.client.on("error",err => {
+                clearTimeout(this.timeoutId)
+                reject(err)
+            })
         
         })
     }
