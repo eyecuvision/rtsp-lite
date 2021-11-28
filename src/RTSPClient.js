@@ -188,9 +188,23 @@ class RTSPClient{
         
     }
 
-    connect(route){
+    setRoute(route){
         this.route = route
         this.uri = `rtsp://${this.ipAddress}:${this.port}${this.route}`
+    }
+
+    testRoute(route){
+        this.setRoute(route)
+        return this.describe()
+    }
+
+    connect(route){
+
+        if(typeof route === "string"){
+            this.setRoute(route)
+        }
+
+        
         return new Promise((resolve,reject) => {
             this.timeoutId = setTimeout(() => {reject("Connection timeout is reached.")},this.clientTimeout)
 
@@ -207,19 +221,24 @@ class RTSPClient{
         
     }
 
+    
+
     send(message){ 
         return new Promise((resolve,reject) => {
+            
             this.timeoutId = setTimeout(() => {
                 this.client.removeAllListeners()
                 reject("Timeout is reached.")
             },this.clientTimeout)
             this.client.write(Buffer.from(message))
-            this.client.on("data",(data) => {
+            this.client.once("data",(data) => {
                 clearTimeout(this.timeoutId)
                 resolve(data.toString())
+                this.client.removeAllListeners("error")
             })
-            this.client.on("error",err => {
+            this.client.once("error",err => {
                 clearTimeout(this.timeoutId)
+                this.client.removeAllListeners("data")
                 reject(err)
             })
         
@@ -350,6 +369,7 @@ class RTSPClient{
                 const parsedResponse = RTSPClient.parseResponse(response)
                 resolve(parsedResponse)
             }catch(err){
+                console.error(err)
                 reject(err)
             }
             
