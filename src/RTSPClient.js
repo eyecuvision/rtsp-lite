@@ -369,7 +369,6 @@ class RTSPClient{
                 const parsedResponse = RTSPClient.parseResponse(response)
                 resolve(parsedResponse)
             }catch(err){
-                console.error(err)
                 reject(err)
             }
             
